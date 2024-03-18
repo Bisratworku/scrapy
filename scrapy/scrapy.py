@@ -38,11 +38,17 @@ class Layer_Dense:
         if self.bias_regularizer_l2 > 0:
             self.dbiases += 2 * self.bias_regularizer_l2 * self.biases
         self.dinputs = np.dot(dvalues, self.weights.T)
-l1 = Layer_Dense(28*28, 123)
-img = train_img[:10].reshape(-1, 28 * 28)
-l1.forward(img)
+
 class conv2D:
-    def __init__(self, * , kernel : tuple, padding : int = 0, stride :int = 1):
+    def __init__(self, img_shape : tuple,* , kernel : tuple, padding : int = 0, stride :int = 1):
+        if len(img_shape) == 4 :
+            x_out = int(np.ceil((((img_shape[2] - kernel[1]) + 2 * padding)/stride) + 1))
+            y_out = int(np.ceil((((img_shape[3] - kernel[2]) + 2 * padding)/stride) + 1))
+            self.img_shape = np.array([kernel[0], img_shape[0] , x_out, y_out])
+        elif len(img_shape) == 3:
+            x_out = int(np.ceil((((img_shape[1] - kernel[1]) + 2 * padding)/stride) + 1))
+            y_out = int(np.ceil((((img_shape[2] - kernel[2]) + 2 * padding)/stride) + 1))
+            self.img_shape = np.array([kernel[0], img_shape[0], x_out, y_out])
         self.weights = np.random.randn(*kernel)
         self.padding = padding
         self.stride = stride
@@ -79,8 +85,14 @@ class conv2D:
             return self.output
         except:
             return "the image can no longer be convolved"
-img = train_img[:10]
 class MaxPool_2D:
+    def __init__(self , img_shape: tuple):
+        try:
+            x_out = int(np.ceil(((img_shape[2] - 2)/2) + 1))
+            y_out = int(np.ceil(((img_shape[3] - 2)/2) + 1))
+            self.img_shape = np.array([img_shape[0], img_shape[1], x_out, y_out])
+        except :
+            print("Please insert a 4D shaped array")
     def pool(self, img):
         x_out = int(np.ceil(((img.shape[0] - 2)/2) + 1))
         y_out = int(np.ceil(((img.shape[1] - 2)/2) + 1))
@@ -100,6 +112,12 @@ class MaxPool_2D:
             return self.output
         except:
             return "the image can no longer be downgraded"
+img = train_img[:10]
+class flatten:
+    def forward(self, input):
+        self.output = input.reshape(-1, input.shape[1] * input.shape[2] * input.shape[3])
+
+
 
 class Layer_Dropout:
     def __init__(self, rate : float):
