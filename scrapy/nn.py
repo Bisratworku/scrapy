@@ -40,15 +40,7 @@ class Layer_Dense:
         self.dinputs = np.dot(dvalues, self.weights.T)
 
 class conv2D:
-    def __init__(self, img_shape : tuple,* , kernel : tuple, padding : int = 0, stride :int = 1):
-        if len(img_shape) == 4 :
-            x_out = int(np.ceil((((img_shape[2] - kernel[1]) + 2 * padding)/stride) + 1))
-            y_out = int(np.ceil((((img_shape[3] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([kernel[0], img_shape[0] , x_out, y_out])
-        elif len(img_shape) == 3:
-            x_out = int(np.ceil((((img_shape[1] - kernel[1]) + 2 * padding)/stride) + 1))
-            y_out = int(np.ceil((((img_shape[2] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([kernel[0], img_shape[0], x_out, y_out])
+    def __init__(self,* , kernel : tuple, padding : int = 0, stride :int = 1):
         self.weights = np.random.randn(*kernel)
         self.padding = padding
         self.stride = stride
@@ -72,7 +64,7 @@ class conv2D:
         try:
             if len(img.shape) == 3:
                 x_out = int(np.ceil((((img.shape[1] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
-                y_out = int(np.ceil((((img.shape[2] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
+                y_out = int(np.ceil((((img.shape[2] - self.kernel[2]) + (2 * sself.padding))/self.stride) + 1))
             elif len(img.shape) == 4:
                 x_out = int(np.ceil((((img.shape[2] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
                 y_out = int(np.ceil((((img.shape[3] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
@@ -86,13 +78,7 @@ class conv2D:
         except:
             return "the image can no longer be convolved"
 class MaxPool_2D:
-    def __init__(self , img_shape: tuple):
-        try:
-            x_out = int(np.ceil(((img_shape[2] - 2)/2) + 1))
-            y_out = int(np.ceil(((img_shape[3] - 2)/2) + 1))
-            self.img_shape = np.array([img_shape[0], img_shape[1], x_out, y_out])
-        except :
-            print("Please insert a 4D shaped array")
+    def __init__(self ):
     def pool(self, img):
         x_out = int(np.ceil(((img.shape[0] - 2)/2) + 1))
         y_out = int(np.ceil(((img.shape[1] - 2)/2) + 1))
@@ -443,6 +429,11 @@ class model:
 
 
 
+Model = model()
+Model.add(
+    conv2D((32,28,28), kernel = (12,3,3), padding=  1, stride = 1)
+
+)
 
 
 
