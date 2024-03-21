@@ -64,7 +64,7 @@ class conv2D:
         try:
             if len(img.shape) == 3:
                 x_out = int(np.ceil((((img.shape[1] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
-                y_out = int(np.ceil((((img.shape[2] - self.kernel[2]) + (2 * sself.padding))/self.stride) + 1))
+                y_out = int(np.ceil((((img.shape[2] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
             elif len(img.shape) == 4:
                 x_out = int(np.ceil((((img.shape[2] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
                 y_out = int(np.ceil((((img.shape[3] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
@@ -78,7 +78,6 @@ class conv2D:
         except:
             return "the image can no longer be convolved"
 class MaxPool_2D:
-    def __init__(self ):
     def pool(self, img):
         x_out = int(np.ceil(((img.shape[0] - 2)/2) + 1))
         y_out = int(np.ceil(((img.shape[1] - 2)/2) + 1))
@@ -430,15 +429,9 @@ class model:
 
 
 Model = model()
-Model.add(
-    conv2D((32,28,28), kernel = (12,3,3), padding=  1, stride = 1)
 
-)
-
-
-
-
-
+Model.add(conv2D(kernel = (12,3,3), padding=  1, stride= 2))
+print(Model.layers[0].deapth)
 
 
 
