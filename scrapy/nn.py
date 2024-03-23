@@ -49,7 +49,7 @@ class conv2D:
             x_out = int(np.ceil((((img_shape[1] - kernel[1]) + 2 * padding)/stride) + 1))
             y_out = int(np.ceil((((img_shape[2] - kernel[2]) + 2 * padding)/stride) + 1))
             self.img_shape = np.array([img_shape[0], kernel[0], x_out, y_out])
-        self.weights = np.random.randn(*kernel)
+        self.sample = np.random.randn(*kernel)
         self.padding = padding
         self.stride = stride
         self.kernel = kernel
@@ -80,7 +80,7 @@ class conv2D:
             self.biases = np.zeros((img.shape[0],self.deapth , 1, 1))
             for i in range(self.deapth):
                 for idx,j in enumerate(img):
-                    self.output[i][idx] = self.convolve(j,self.weights[i]) 
+                    self.output[i][idx] = self.convolve(j,self.sample[i]) 
             self.output = self.output + self.biases
             return self.output
         except:
@@ -373,7 +373,7 @@ class model:
         self.passes = 0
     def add(self, layer):
         self.layers.append(layer)
-        if hasattr(layer, 'weights'):
+        if hasattr(layer, 'weights') and hasattr(layer, "sample"):
             self.tunable_layers.append(layer)
     def set (self,*,loss, optimizer):
         self.loss = loss
@@ -381,7 +381,8 @@ class model:
     def regularization(self):
         self.regularized = []
         for tunable_layer in self.tunable_layers:
-            self.regularized.append(self.loss.regularization_loss(tunable_layer))
+            if hasattr(tunable_layer, "weights"):
+                self.regularized.append(self.loss.regularization_loss(tunable_layer))
         return np.sum(self.regularized)    
     def forward(self, input, label):
         self.inputs = input
