@@ -44,11 +44,11 @@ class conv2D:
         if len(img_shape) == 4 :
             x_out = int(np.ceil((((img_shape[2] - kernel[1]) + 2 * padding)/stride) + 1))
             y_out = int(np.ceil((((img_shape[3] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([kernel[0], img_shape[0] , x_out, y_out])
+            self.img_shape = np.array([img_shape[0], kernel[0] , x_out, y_out])
         elif len(img_shape) == 3:
             x_out = int(np.ceil((((img_shape[1] - kernel[1]) + 2 * padding)/stride) + 1))
             y_out = int(np.ceil((((img_shape[2] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([kernel[0], img_shape[0], x_out, y_out])
+            self.img_shape = np.array([img_shape[0], kernel[0], x_out, y_out])
         self.weights = np.random.randn(*kernel)
         self.padding = padding
         self.stride = stride
@@ -76,8 +76,8 @@ class conv2D:
             elif len(img.shape) == 4:
                 x_out = int(np.ceil((((img.shape[2] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
                 y_out = int(np.ceil((((img.shape[3] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
-            self.output = np.zeros((self.deapth,img.shape[0],x_out, y_out))
-            self.biases = np.zeros((self.deapth,img.shape[0] , 1, 1))
+            self.output = np.zeros((img.shape[0],self.deapth,x_out, y_out))
+            self.biases = np.zeros((img.shape[0],self.deapth , 1, 1))
             for i in range(self.deapth):
                 for idx,j in enumerate(img):
                     self.output[i][idx] = self.convolve(j,self.weights[i]) 
@@ -88,11 +88,12 @@ class conv2D:
 class MaxPool_2D:
     def __init__(self , img_shape: tuple):
         try:
-            x_out = int(np.ceil(((img_shape[2] - 2)/2) + 1))
-            y_out = int(np.ceil(((img_shape[3] - 2)/2) + 1))
-            self.img_shape = np.array([img_shape[0], img_shape[1], x_out, y_out])
+            if len(img_shape) == 4:
+                x_out = int(np.ceil(((img_shape[2] - 2)/2) + 1))
+                y_out = int(np.ceil(((img_shape[3] - 2)/2) + 1))
+                self.img_shape = np.array([img_shape[0], img_shape[1], x_out, y_out])
         except :
-            print("Please insert a 4D shaped array")
+            print("please Enter a 2D image")
     def pool(self, img):
         x_out = int(np.ceil(((img.shape[0] - 2)/2) + 1))
         y_out = int(np.ceil(((img.shape[1] - 2)/2) + 1))
@@ -114,11 +115,13 @@ class MaxPool_2D:
             return "the image can no longer be downgraded"
 img = train_img[:10]
 class flatten:
+    def __init__(self, img_shape : tuple):
+        if len(img_shape) == 3:
+             self.img_shape = img_shape[1] * img_shape[2]
+        elif len(img_shape) == 4:
+            self.img_shape = img_shape[1] * img_shape[2] * img_shape[3]
     def forward(self, input):
         self.output = input.reshape(-1, input.shape[1] * input.shape[2] * input.shape[3])
-
-
-
 class Layer_Dropout:
     def __init__(self, rate : float):
         self.rate = 1 - rate
@@ -442,19 +445,21 @@ class model:
         return model
 
 
+m = model()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+m.add(conv2D((32, 28,28), kernel=  (10,4,4), stride = 3, padding = 2))
+m.add(MaxPool_2D(m.layers[0].img_shape))
+m.add(conv2D(m.layers[1].img_shape, kernel= (12,3,3), stride = 2 , padding= 1))
+m.add(MaxPool_2D(m.layers[2].img_shape))
+m.add(flatten(m.layers[3].img_shape))
+m.add(Layer_Dense(m.layers[4].img_shape, 123))
+m.add(Activation_ReLU())
+m.add(Layer_Dense(123, 123))
+m.add(Activation_ReLU())
+m.add(Layer_Dense(123, 10))
+m.add(Activation_Softmax())
+m.set(
+    loss=  Loss_CategoricalCrossentropy(),
+    optimizer=  Optimizer_Adam()
+)
+m.train(test_img, train_lbl, epoches = 10, batch = 32)
