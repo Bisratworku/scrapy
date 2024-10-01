@@ -1,12 +1,8 @@
 import numpy as np
 import pickle as pkl
-import matplotlib.pyplot as plt
-import idx2numpy
+
+
 #=nb
-train_img =  idx2numpy.convert_from_file("train-images.idx3-ubyte")
-train_lbl = idx2numpy.convert_from_file("train-labels.idx1-ubyte")
-test_img = idx2numpy.convert_from_file("t10k-images.idx3-ubyte")
-test_lbl = idx2numpy.convert_from_file("t10k-labels.idx1-ubyte")
 
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int,
@@ -39,89 +35,7 @@ class Layer_Dense:
             self.dbiases += 2 * self.bias_regularizer_l2 * self.biases
         self.dinputs = np.dot(dvalues, self.weights.T)
 
-class conv2D:
-    def __init__(self, img_shape : tuple,* , kernel : tuple, padding : int = 0, stride :int = 1):
-        if len(img_shape) == 4 :
-            x_out = int(np.ceil((((img_shape[2] - kernel[1]) + 2 * padding)/stride) + 1))
-            y_out = int(np.ceil((((img_shape[3] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([img_shape[0], kernel[0] , x_out, y_out])
-        elif len(img_shape) == 3:
-            x_out = int(np.ceil((((img_shape[1] - kernel[1]) + 2 * padding)/stride) + 1))
-            y_out = int(np.ceil((((img_shape[2] - kernel[2]) + 2 * padding)/stride) + 1))
-            self.img_shape = np.array([img_shape[0], kernel[0], x_out, y_out])
-        self.sample = np.random.randn(*kernel)
-        self.padding = padding
-        self.stride = stride
-        self.kernel = kernel
-        self.deapth = kernel[0] 
-    def zero_pad(self, img):
-        if len(img.shape) == 2:
-            return np.pad(img, self.padding, "constant")
-        if len(img.shape) == 3:
-            return np.pad(img.sum(-1)/255 , self.padding, "constant")
-        else:
-            return "Please insert a proper image"
-    def convolve(self, img, kernel):
-        pad_img = self.zero_pad(img)
-        output = np.zeros((self.output.shape[2], self.output.shape[3]))
-        for idx, i in enumerate(range(0,pad_img.shape[0] - (kernel.shape[0] - 1), self.stride)):
-            for idj,j in enumerate(range(0, pad_img.shape[1] - (kernel.shape[1] - 1), self.stride)):
-                 output[idx][idj] = np.sum(pad_img[i: i + kernel.shape[0] , j : j + kernel.shape[1]] * kernel)
-        return output.clip(0, 255)
-    def forward(self, img):
-        try:
-            if len(img.shape) == 3:
-                x_out = int(np.ceil((((img.shape[1] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
-                y_out = int(np.ceil((((img.shape[2] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
-            elif len(img.shape) == 4:
-                x_out = int(np.ceil((((img.shape[2] - self.kernel[1]) + (2 * self.padding))/self.stride) + 1))
-                y_out = int(np.ceil((((img.shape[3] - self.kernel[2]) + (2 * self.padding))/self.stride) + 1))
-            self.output = np.zeros((img.shape[0],self.deapth,x_out, y_out))
-            self.biases = np.zeros((img.shape[0],self.deapth , 1, 1))
-            for i in range(self.deapth):
-                for idx,j in enumerate(img):
-                    self.output[i][idx] = self.convolve(j,self.sample[i]) 
-            self.output = self.output + self.biases
-            return self.output
-        except:
-            return "the image can no longer be convolved"
-class MaxPool_2D:
-    def __init__(self , img_shape: tuple):
-        try:
-            if len(img_shape) == 4:
-                x_out = int(np.ceil(((img_shape[2] - 2)/2) + 1))
-                y_out = int(np.ceil(((img_shape[3] - 2)/2) + 1))
-                self.img_shape = np.array([img_shape[0], img_shape[1], x_out, y_out])
-        except :
-            print("please Enter a 2D image")
-    def pool(self, img):
-        x_out = int(np.ceil(((img.shape[0] - 2)/2) + 1))
-        y_out = int(np.ceil(((img.shape[1] - 2)/2) + 1))
-        output = np.zeros((x_out, y_out))
-        for idx,i in enumerate(range(0, img.shape[0] - 1, 2)):
-            for idj,j in enumerate(range(0, img.shape[1] - 1, 2)):
-                output[idx][idj] = np.max(img[i : i + 2, j : j + 2])
-        return output
-    def forward(self, img):
-        try:
-            x_out = int(np.ceil(((img.shape[2] - 2)/ 2 ) + 1))
-            y_out = int(np.ceil(((img.shape[3] - 2)/2 ) + 1))
-            self.output = np.zeros((img.shape[0], img.shape[1], x_out, y_out))
-            for idx, i in enumerate(img):
-                for idj , j in enumerate(i):
-                    self.output[idx][idj] = self.pool(j)
-            return self.output
-        except:
-            return "the image can no longer be downgraded"
-img = train_img[:10]
-class flatten:
-    def __init__(self, img_shape : tuple):
-        if len(img_shape) == 3:
-             self.img_shape = img_shape[1] * img_shape[2]
-        elif len(img_shape) == 4:
-            self.img_shape = img_shape[1] * img_shape[2] * img_shape[3]
-    def forward(self, input):
-        self.output = input.reshape(-1, input.shape[1] * input.shape[2] * input.shape[3])
+
 class Layer_Dropout:
     def __init__(self, rate : float):
         self.rate = 1 - rate
@@ -303,7 +217,10 @@ class Loss_CategoricalCrossentropy(Loss):
         labels = len(dvalues[0])
         if len(y_true.shape) == 1:
             y_true = np.eye(labels)[y_true]
-        self.dinputs = -y_true / dvalues
+        
+        #dvalues[dvalues == 0] = 1e-4
+        self.dinputs = -y_true / dvalues 
+        
         self.dinputs = self.dinputs / samples
     def accuracy(self, pred, target):
         self.prediction = np.argmax(pred, axis = 1)
@@ -414,7 +331,7 @@ class model:
             for tunable_layer in self.tunable_layers:
                 self.optimaizer.update_params(tunable_layer)
             self.optimaizer.post_update_params()
-            if epoches % print_every == 0:
+            if i % print_every == 0:
                     print(f'Epoches = {i},  Loss = {self.calculated_loss:.3f}, Learning_rate = {self.optimaizer.current_learning_rate :.3f}, Acc = {self.loss.accuracy(self.last_layer_output, label[self.passes]):.3f}')
             self.passes += 1
             if self.passes >= len(data):
@@ -444,23 +361,3 @@ class model:
         with open(f'{path}.pkl', "rb") as file:
             model = pkl.load(file)
         return model
-
-
-m = model()
-
-m.add(conv2D((32, 28,28), kernel=  (10,4,4), stride = 3, padding = 2))
-m.add(MaxPool_2D(m.layers[0].img_shape))
-m.add(conv2D(m.layers[1].img_shape, kernel= (12,3,3), stride = 2 , padding= 1))
-m.add(MaxPool_2D(m.layers[2].img_shape))
-m.add(flatten(m.layers[3].img_shape))
-m.add(Layer_Dense(m.layers[4].img_shape, 123))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(123, 123))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(123, 10))
-m.add(Activation_Softmax())
-m.set(
-    loss=  Loss_CategoricalCrossentropy(),
-    optimizer=  Optimizer_Adam()
-)
-m.train(test_img, train_lbl, epoches = 10, batch = 32)
