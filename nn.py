@@ -1,6 +1,6 @@
 import numpy as np
 import pickle as pkl
-
+import idx2numpy
 
 #=nb
 
@@ -65,18 +65,24 @@ class Activation_Softmax:
             single_output = single_output.reshape(-1, 1)
             jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
             self.dinputs[index] = np.dot(jacobian_matrix,single_dvalues)
+    def prediction(self):
+        return np.argmax(self.output, -1)
 class Activation_Sigmoid:
     def forward(self, inputs):
         self.inputs = inputs
         self.output = 1 / (1 + np.exp(-inputs))
     def backward(self, dvalues):
         self.dinputs = dvalues * (1 - self.output) * self.output
+    def prediction(self):
+        return (self.output > 0.5) * 1
 class Activation_Linear:
     def forward(self, inputs):
         self.inputs = inputs
         self.output = inputs
     def backward(self, dvalues):
         self.dinputs = dvalues.copy()
+    def prediction(self):
+        return self.output
 class Optimizer_SGD:
     def __init__(self, learning_rate :float = 1., decay :float = 0., momentum :float = 0.):
         self.learning_rate :float = learning_rate
@@ -222,12 +228,6 @@ class Loss_CategoricalCrossentropy(Loss):
         self.dinputs = -y_true / dvalues 
         
         self.dinputs = self.dinputs / samples
-    def accuracy(self, pred, target):
-        self.prediction = np.argmax(pred, axis = 1)
-        if len(target.shape) == 2:
-            target = np.argmax(target, axis = 1)
-        output = np.mean(self.prediction == target)
-        return output
         
 class Activation_Softmax_Loss_CategoricalCrossentropy():
     def __init__(self):
@@ -257,10 +257,6 @@ class Loss_BinaryCrossentropy(Loss):
         clipped_dvalues = np.clip(dvalues, 1e-7, 1 - 1e-7)
         self.dinputs = -(y_true / clipped_dvalues -(1 - y_true) / (1 - clipped_dvalues)) / outputs
         self.dinputs = self.dinputs / samples
-    def accuracy(self, pred, target):
-        self.prediction = np.round(pred)
-        output = np.mean(self.prediction == target)
-        return output
 class Loss_MeanSquaredError(Loss):
     def forward(self, y_pred, y_true):
         sample_losses = np.mean((y_true - y_pred)**2, axis=-1)
@@ -281,5 +277,3 @@ class Loss_MeanAbsoluteError(Loss):
         outputs = len(dvalues[0])
         self.dinputs = np.sign(y_true - dvalues) / outputs
         self.dinputs = self.dinputs / samples
-    def accuracy(self, y_pred, y_true):
-        return np.mean(np.abs(y_true - y_pred), axis = -1)
