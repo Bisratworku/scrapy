@@ -66,7 +66,8 @@ class Activation_Softmax:
             jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
             self.dinputs[index] = np.dot(jacobian_matrix,single_dvalues)
     def prediction(self):
-        return np.argmax(self.output, -1)
+        return np.argmax(self.output, -1) 
+        
 class Activation_Sigmoid:
     def forward(self, inputs):
         self.inputs = inputs
@@ -228,6 +229,7 @@ class Loss_CategoricalCrossentropy(Loss):
         self.dinputs = -y_true / dvalues 
         
         self.dinputs = self.dinputs / samples
+        return self.dinputs
         
 class Activation_Softmax_Loss_CategoricalCrossentropy():
     def __init__(self):
@@ -257,6 +259,7 @@ class Loss_BinaryCrossentropy(Loss):
         clipped_dvalues = np.clip(dvalues, 1e-7, 1 - 1e-7)
         self.dinputs = -(y_true / clipped_dvalues -(1 - y_true) / (1 - clipped_dvalues)) / outputs
         self.dinputs = self.dinputs / samples
+        return self.dinputs
 class Loss_MeanSquaredError(Loss):
     def forward(self, y_pred, y_true):
         sample_losses = np.mean((y_true - y_pred)**2, axis=-1)
@@ -266,8 +269,7 @@ class Loss_MeanSquaredError(Loss):
         outputs = len(dvalues[0])
         self.dinputs = -2 * (y_true - dvalues) / outputs
         self.dinputs = self.dinputs / samples
-    def accuracy(self, y_pred, y_true):
-        return  np.mean((y_true - y_pred)**2, axis = -1)
+        return self.dinputs
 class Loss_MeanAbsoluteError(Loss):  
     def forward(self, y_pred, y_true):
         sample_losses = np.mean(np.abs(y_true - y_pred), axis=-1)
@@ -277,3 +279,92 @@ class Loss_MeanAbsoluteError(Loss):
         outputs = len(dvalues[0])
         self.dinputs = np.sign(y_true - dvalues) / outputs
         self.dinputs = self.dinputs / samples
+        return self.dinputs
+class Model:
+    def __init__(self):
+        self.layers = []
+        self.tunableLayer = []
+    def add(self, layers):
+        if hasattr(layers, "weights"):
+            self.layers.append(layers)
+            self.tunableLayer.append(layers)
+        else :
+            self.layers.append(layers)
+    
+    def set(self, *, Loss, Optimizer):
+        self.Loss = Loss
+        self.Optimizer = Optimizer
+
+    def forward(self, train_data):
+        data = train_data
+        for i in self.layers:
+            i.forward(data)
+            data = i.output 
+        return self.layers[len(self.layers) -1]
+    def _backward(self, dinputs, target):
+        derivative = self.Loss.backward(dinputs, target)
+        for i in reversed(self.layers):
+            i.backward(derivative)
+            derivative = i.dinputs
+    def step(self):
+        self.Optimizer.pre_update_params()
+        for i in self.tunableLayer:
+            self.Optimizer.update_params(i)
+            self.Optimizer.post_update_params()
+    def _batch(self, X, y , shuffle: bool = True, batch = 1):
+        keys = np.array(range(X.shape[0]))
+        if shuffle:
+            X = X[keys]
+            y = y[keys]
+        data_split = np.array_split(X, batch)
+        label_split = np.array_split(y, batch)
+        return data_split, label_split
+    def train(self,X, y, epoches, batch = 1, shuffle = True, print_every = 1):
+            data, label = self._batch(X,y, shuffle= shuffle, batch = batch)
+            passes = 0
+            for i in range(1, epoches + 1):
+                last_layer = self.forward(data[passes])
+                if i % print_every == 0:
+                    print(f'Epoch = {i},  Loss = {self.Loss.calculate(last_layer.output, label[passes]):.4},  Acc = {np.mean(last_layer.prediction() == label[passes])* 100 :.1f}')
+                self._backward(last_layer.output, label[passes])
+                self.step()
+                if passes > len(data):
+                    passes = 0
+                else:
+                    passes+= 1
+
+
+train_img = (idx2numpy.convert_from_file("train-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
+train_lbl = idx2numpy.convert_from_file("train-labels.idx1-ubyte")
+test_img = (idx2numpy.convert_from_file("t10k-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
+test_lbl = idx2numpy.convert_from_file("t10k-labels.idx1-ubyte")
+
+
+
+m = Model()
+
+
+m.add(Layer_Dense(28*28, 500, weight_regularizer_l2 = 0.02, bias_regularizer_l2 = 0.02))
+m.add(Activation_ReLU())
+m.add(Layer_Dense(500, 500))
+m.add(Activation_ReLU())
+m.add(Layer_Dense(500, 10))
+m.add(Activation_Softmax())
+
+
+m.set(Loss = Loss_CategoricalCrossentropy(),
+      Optimizer = Optimizer_Adam())
+
+
+m.train(train_img, train_lbl, 100, 123, True, print_every = 10)
+
+
+
+
+
+
+
+
+
+
+
