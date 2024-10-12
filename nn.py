@@ -1,6 +1,6 @@
 import numpy as np
 import pickle as pkl
-import idx2numpy
+
 
 #=nb
 
@@ -319,51 +319,40 @@ class Model:
         data_split = np.array_split(X, batch)
         label_split = np.array_split(y, batch)
         return data_split, label_split
-    def train(self,X, y, epoches, batch = 1, shuffle = True, print_every = 1):
+    def train(self,X, y, *,batch = 1, shuffle = True, print_every = 1):
             data, label = self._batch(X,y, shuffle= shuffle, batch = batch)
-            passes = 0
-            for i in range(1, epoches + 1):
-                last_layer = self.forward(data[passes])
-                if i % print_every == 0:
-                    print(f'Epoch = {i},  Loss = {self.Loss.calculate(last_layer.output, label[passes]):.4},  Acc = {np.mean(last_layer.prediction() == label[passes])* 100 :.1f}')
-                self._backward(last_layer.output, label[passes])
+            for batch in range(batch):
+                pred = self.forward(data[batch])
+                loss = self.Loss.calculate(pred.output, label[batch])
+                if batch % print_every == 0:
+                    current = len(data[0]) * (batch + 1)
+                    print(f'Loss : {loss :.4f}     [{current}/ {len(X)}]')
+                self._backward(pred.output, label[batch])
                 self.step()
-                if passes > len(data):
-                    passes = 0
-                else:
-                    passes+= 1
+    def test(self, X,y,*, batch:int = 1, shuffle = True):
+        data, label = self._batch(X, y, batch= batch, shuffle = shuffle)
+        test_loss , correct,total_pred = 0,0,0
+        for batch in range(batch):
+            pred = self.forward(data[batch])
+            test_loss += self.Loss.calculate(pred.output, label[batch])
+            correct += np.sum(pred.prediction() == label[batch])
+        test_loss /= batch
+        correct /= len(X)
+        
+        print(f"Test LOSS : {test_loss :.4f}    Accuracy = {correct * 100 :.1f} ")
+    
+    def predict(self, img):
+        pred = self.forward(img)
+        return pred.prediction()
 
-
-train_img = (idx2numpy.convert_from_file("train-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
-train_lbl = idx2numpy.convert_from_file("train-labels.idx1-ubyte")
-test_img = (idx2numpy.convert_from_file("t10k-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
-test_lbl = idx2numpy.convert_from_file("t10k-labels.idx1-ubyte")
-
-
-
-m = Model()
-
-
-m.add(Layer_Dense(28*28, 500, weight_regularizer_l2 = 0.02, bias_regularizer_l2 = 0.02))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(500, 500))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(500, 10))
-m.add(Activation_Softmax())
-
-
-m.set(Loss = Loss_CategoricalCrossentropy(),
-      Optimizer = Optimizer_Adam())
-
-
-m.train(train_img, train_lbl, 100, 123, True, print_every = 10)
-
-
-
-
-
-
-
+    def save(self, path:str, obj):
+        with open(f'{path}.pkl', 'wb') as file:
+            pkl.dump(obj , file)
+    @staticmethod
+    def load(path):
+        with open(f'{path}.pkl', "rb") as file:
+            model = pkl.load(file)
+        return model
 
 
 
