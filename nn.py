@@ -1,14 +1,8 @@
 import numpy as np
 import pickle as pkl
 
-import idx2numpy
+
 #=nb
-
-train_img = (idx2numpy.convert_from_file("train-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
-train_lbl = idx2numpy.convert_from_file("train-labels.idx1-ubyte")
-test_img = (idx2numpy.convert_from_file("t10k-images.idx3-ubyte")/255).reshape(-1, 28 * 28)
-test_lbl = idx2numpy.convert_from_file("t10k-labels.idx1-ubyte")
-
 
 
 class Layer_Dense:
@@ -360,28 +354,5 @@ class Model:
         with open(f'{path}.pkl', "rb") as file:
             model = pkl.load(file)
         return model
-
-
-
-m = Model()
-
-
-m.add(Layer_Dense(28*28, 500, weight_regularizer_l2 = 0.02, bias_regularizer_l2 = 0.02))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(500, 500))
-m.add(Activation_ReLU())
-m.add(Layer_Dense(500, 10))
-m.add(Activation_Softmax())
-
-
-m.set(Loss = Loss_CategoricalCrossentropy(),      
- Optimizer = Optimizer_Adam())
-
-
-for i in range(1, 5):
-    print(f'EPOCH = {i} --------------------------------------')
-    m.train(train_img, train_lbl , batch= 6, shuffle = True, print_every = 2)
-    m.test(test_img, test_lbl, batch = 6, shuffle = True)
-
 
 
