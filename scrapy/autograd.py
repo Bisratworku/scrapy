@@ -20,14 +20,15 @@ class graph:
         other = other if isinstance(other, graph) else graph(other)
         out = graph(np.dot(self.value , other.value), [self, other], "*")
         def _backward():
-            self.grad = other.value * out.grad
-            other.grad = self.value * out.grad
+            self.grad = np.dot(other.value.T ,out.grad)
+            other.grad = np.dot(self.value.T , out.grad)
         self._backward = _backward
         return out
     def ReLU(self):
         out = graph(np.maximum(0, self.value), [self], "ReLU")
         def _backward():
-            self.grad = (self.value > 0).astype(float)
+            out.value[out.value > 0] = 1
+            self.grad = out.grad * out.value 
         self._backward = _backward
         return out
     def backward(self):
@@ -46,10 +47,3 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}'
 
-x = graph(-2)
-w = graph(5)
-b = graph(-4)
-c = (x + w) * b
-print(c)
-c.backward()
-print(b.grad, w.grad, x.grad)
