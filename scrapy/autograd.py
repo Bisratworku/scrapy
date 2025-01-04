@@ -24,6 +24,12 @@ class graph:
             other.grad = np.dot(self.value.T , out.grad)
         self._backward = _backward
         return out
+    def __rtruediv__(self, other):
+        out = graph(other /self.value, [self], "div")
+        def _backward():
+            self.grad = -other/(self.value**2) * out.grad
+        self._backward = _backward
+        return out
     def ReLU(self):
         out = graph(np.maximum(0, self.value), [self], "ReLU")
         def _backward():
@@ -31,6 +37,8 @@ class graph:
             self.grad = out.grad * out.value 
         self._backward = _backward
         return out
+    
+    
     def backward(self):
         visited = []
         topo = []
@@ -45,5 +53,6 @@ class graph:
         for i in topo:
             i._backward()
     def __repr__(self):
-        return f'Data = {self.value}'
+        return f'Data = {self.value}, Grad = {self.grad}'
+
 
