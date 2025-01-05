@@ -12,24 +12,35 @@ class graph:
         other = other if isinstance(other, graph) else graph(other)
         out = graph(self.value + other.value, [self, other], "+")
         def _backward():
-            self.grad = out.grad
-            other.grad = out.grad
+            self.grad += out.grad
+            other.grad += out.grad
         self._backward = _backward
         return out
     def __mul__(self, other):
         other = other if isinstance(other, graph) else graph(other)
         out = graph(np.dot(self.value , other.value), [self, other], "*")
         def _backward():
-            self.grad = np.dot(other.value.T ,out.grad)
-            other.grad = np.dot(self.value.T , out.grad)
+            self.grad += np.dot(other.value.T ,out.grad)
+            other.grad += np.dot(self.value.T , out.grad)
         self._backward = _backward
         return out
     def __rtruediv__(self, other):
-        out = graph(other /self.value, [self], "div")
+        out = graph(other /self.value, [self], "inv") # dividing a constant value by a graph
         def _backward():
-            self.grad = -other/(self.value**2) * out.grad
+            self.grad += -other/(self.value**2) * out.grad # the derivative of 1/x is -1/x^2
         self._backward = _backward
         return out
+    def __truediv__(self, other):
+        out = graph(self.value/other, [self], "div")
+        return out
+    def __pow__(self, other):
+        out = graph(self.value**other, [self], "EXP")
+        def _backward():
+            self.grad += (other *(self.value**(other -1))) * out.grad
+        
+        self._backward = _backward
+        return out
+        
     def ReLU(self):
         out = graph(np.maximum(0, self.value), [self], "ReLU")
         def _backward():
@@ -56,3 +67,5 @@ class graph:
         return f'Data = {self.value}, Grad = {self.grad}'
 
 
+d = graph(2)/2
+print(d)
