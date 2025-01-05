@@ -31,8 +31,11 @@ class graph:
         self._backward = _backward
         return out
     def __truediv__(self, other):
-        out = graph(self.value/other, [self], "div")
-        return out, "fuck"
+        out = graph(self.value *(other**-1), [self], "div")
+        def _backward():
+            self.grad += (other ** -1) * out.grad
+        self._backward = _backward
+        return out
     def __pow__(self, other):
         out = graph(self.value**other, [self], "EXP")
         def _backward():
@@ -66,6 +69,3 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad}'
 
-
-d = graph(2)/2
-print(d)
