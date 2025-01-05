@@ -32,7 +32,7 @@ class graph:
         return out
     def __truediv__(self, other):
         out = graph(self.value/other, [self], "div")
-        return out
+        return out, "fuck"
     def __pow__(self, other):
         out = graph(self.value**other, [self], "EXP")
         def _backward():
