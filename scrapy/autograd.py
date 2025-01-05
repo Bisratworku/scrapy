@@ -20,8 +20,8 @@ class graph:
         other = other if isinstance(other, graph) else graph(other)
         out = graph(np.dot(self.value , other.value), [self, other], "*")
         def _backward():
-            self.grad += np.dot(other.value.T ,out.grad)
-            other.grad += np.dot(self.value.T , out.grad)
+            self.grad += np.dot(out.grad,other.value)
+            other.grad += np.dot(out.grad,self.value)
         self._backward = _backward
         return out
     def __rtruediv__(self, other):
@@ -69,3 +69,11 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad}'
 
+
+x = graph(np.random.randn(10,27*27))
+w = graph(np.random.randn(27*27, 10))
+b = graph(np.random.randn(10, 1))
+y = x*w 
+r = y + b
+r = r.ReLU()
+r.backward()
