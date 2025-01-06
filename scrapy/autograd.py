@@ -24,6 +24,10 @@ class graph:
             other.grad += np.dot(self.value.T, other.grad)
         self._backward = _backward
         return out
+    def __sub__(self,other):
+        other = other if isinstance(other, graph) else graph(other)
+        out = graph(self.value - other.value, [self, other], "-")
+        return out
     def __rtruediv__(self, other):
         out = graph(other /self.value, [self], "inv") # dividing a constant value by a graph
         def _backward():
