@@ -16,6 +16,12 @@ class graph:
             other.grad = out.grad
         self._backward = _backward
         return out
+    def __radd__(self, other):
+        out = graph(other + self.value, [self], "C")
+        def _backward():
+            self.grad = other * out.grad
+        self._backward = _backward
+        return out
     def __mul__(self, other):
         other = other if isinstance(other, graph) else graph(other)
         out = graph(np.dot(self.value , other.value), [self, other], "*")
@@ -32,13 +38,16 @@ class graph:
             out.grad = out.grad
         self._backward = _backward
         return out
+    
+    
     def __rtruediv__(self, other):
         out = graph(other /self.value, [self], "inv") # dividing a constant value by a graph
         def _backward():
             self.grad = -other/(self.value**2) * out.grad # the derivative of 1/x is -1/x^2
         self._backward = _backward
         return out
-    def __truediv__(self, other):
+    
+    def __truediv__(self, other): # dividing a graph by a constant value
         out = graph(self.value *(other**-1), [self], "div")
         def _backward():
             self.grad = (other ** -1) * out.grad
@@ -51,7 +60,12 @@ class graph:
         
         self._backward = _backward
         return out
-        
+    def __neg__(self):
+        out = graph(self.value * -1, [self], "-")
+        def _backward():
+            self.grad = -1 * out.grad
+        self._backward = _backward
+        return out
     def ReLU(self):
         out = graph(np.maximum(0, self.value), [self], "ReLU")
         def _backward():
@@ -59,8 +73,18 @@ class graph:
             self.grad += out.grad * out.value 
         self._backward = _backward
         return out
-    
-    
+    def e(self):#"e" stands for Euler's number eg e^self.value
+        out = graph(np.exp(self.value), [self], "e")
+        def _backward():
+            self.grad = out.value * out.grad 
+        self._backward = _backward
+        return out
+    def log(self): # calculates the natural logarithm of self.value
+        out = graph(np.log(self.value), [self], "log")
+        def _backwrad():
+            self.grad = (1/self.value) * out.grad
+        self._backward = _backwrad
+        return out
     def backward(self):
         visited = []
         topo = []
@@ -75,16 +99,7 @@ class graph:
         for i in topo:
             i._backward()
     def __repr__(self):
-        return f'Data = {self.value}, Grad = {self.grad}'
+        return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
 
-a = graph(1)
-s = graph(2)
-f = graph(3)
-
-sum = a + s
-mul = sum * f
-
-exp = mul**2
-exp.backward()
-print(f.grad)
+ 
