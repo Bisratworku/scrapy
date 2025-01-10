@@ -1,42 +1,20 @@
 import numpy as np
 import pickle as pkl
-
+from autograd import graph
 
 #=nb
 
 
 class Layer_Dense:
-    def __init__(self, n_inputs : int, n_neurons : int,
-                 weight_regularizer_l1 : float = 0, weight_regularizer_l2 :float = 0,
-                 bias_regularizer_l1 :float = 0, bias_regularizer_l2 :float =0):
-        self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
-        self.biases = np.zeros((1, n_neurons))
-        self.weight_regularizer_l1 = weight_regularizer_l1
-        self.weight_regularizer_l2 = weight_regularizer_l2
-        self.bias_regularizer_l1 = bias_regularizer_l1
-        self.bias_regularizer_l2 = bias_regularizer_l2
+    def __init__(self, n_inputs : int, n_neurons : int):
+        self.weights = graph((0.1 * np.random.randn(n_inputs, n_neurons)))
+        self.biases = graph(np.zeros((1, n_neurons)))
     def forward(self, inputs):
-        self.inputs = inputs
-        self.output = np.dot(inputs, self.weights) + self.biases
-    def backward(self, dvalues):
-        # Gradients on parameters
-        self.dweights = np.dot(self.inputs.T, dvalues)
-        self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
-        if self.weight_regularizer_l1 > 0:
-            dL1 = np.ones_like(self.weights)
-            dL1[self.weights < 0] = -1
-            self.dweights += self.weight_regularizer_l1 * dL1
-        if self.weight_regularizer_l2 > 0:
-            self.dweights += 2 * self.weight_regularizer_l2 * self.weights
-        if self.bias_regularizer_l1 > 0:
-            dL1 = np.ones_like(self.biases)
-            dL1[self.biases < 0] = -1
-            self.dbiases += self.bias_regularizer_l1 * dL1
-        if self.bias_regularizer_l2 > 0:
-            self.dbiases += 2 * self.bias_regularizer_l2 * self.biases
-        self.dinputs = np.dot(dvalues, self.weights.T)
-
-
+        self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
+        self.output = (self.inputs * self.weights) + self.biases
+        return self.output
+    def backward(self):
+        return self.output.backward()
 class Layer_Dropout:
     def __init__(self, rate : float):
         self.rate = 1 - rate
@@ -49,11 +27,11 @@ class Layer_Dropout:
         self.dinputs = dvalues * self.binary_mask
 class Activation_ReLU:
     def forward(self, inputs):
-        self.inputs = inputs
-        self.output = np.maximum(0, inputs)
-    def backward(self, dvalues):
-        self.dinputs = dvalues.copy()
-        self.dinputs[self.inputs <= 0] = 0
+        self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
+        self.output =  self.inputs.ReLU()
+        return self.output
+    def backward(self):
+        return self.output.backward()        
 class Activation_Softmax:
     def forward(self, inputs):
         self.inputs = inputs
@@ -71,20 +49,18 @@ class Activation_Softmax:
         
 class Activation_Sigmoid:
     def forward(self, inputs):
-        self.inputs = inputs
-        self.output = 1 / (1 + np.exp(-inputs))
-    def backward(self, dvalues):
-        self.dinputs = dvalues * (1 - self.output) * self.output
-    def prediction(self):
-        return (self.output > 0.5) * 1
+        self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
+        self.output = 1 / (1 + (inputs * -1).e())
+        return self.output
+    def backward(self):
+        return self.output.backward()        
 class Activation_Linear:
     def forward(self, inputs):
-        self.inputs = inputs
+        self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
         self.output = inputs
-    def backward(self, dvalues):
-        self.dinputs = dvalues.copy()
-    def prediction(self):
         return self.output
+    def backward(self):
+        return self.output.backward()
 class Optimizer_SGD:
     def __init__(self, learning_rate :float = 1., decay :float = 0., momentum :float = 0.):
         self.learning_rate :float = learning_rate
@@ -355,9 +331,14 @@ class Model:
             model = pkl.load(file)
         return model
 
-
-x = np.random.randn(10 , 28*28)
+x = np.random.randn(10, 28*28)
 l1 = Layer_Dense(28*28, 200)
-l1.forward(x)
+a1 = Activation_ReLU()
+l2 = Layer_Dense(200, 10)
+a2 = Activation_Sigmoid()
 
-print(l1.biases.shape, l1.weights.shape, x.shape)
+l1.forward(x)
+a1.forward(l1.output)
+l2.forward(a1.output)
+a2.forward(l2.output)
+print(a2.output.value.shape)
