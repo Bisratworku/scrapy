@@ -11,7 +11,8 @@ class Layer_Dense:
         self.biases = graph(np.zeros((1, n_neurons)))
     def forward(self, inputs):
         self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
-        self.output = (self.inputs * self.weights) + self.biases
+        mul = (self.inputs * self.weights) 
+        self.output = mul + self.biases
         return self.output
     def backward(self):
         return self.output.backward()
@@ -331,14 +332,18 @@ class Model:
             model = pkl.load(file)
         return model
 
-x = np.random.randn(10, 28*28)
-l1 = Layer_Dense(28*28, 200)
+x = np.random.randn(10, 27*27)
+l1 = Layer_Dense(27*27, 200)
 a1 = Activation_ReLU()
-l2 = Layer_Dense(200, 10)
+l2 = Layer_Dense(200, 2)
 a2 = Activation_Sigmoid()
 
 l1.forward(x)
 a1.forward(l1.output)
 l2.forward(a1.output)
 a2.forward(l2.output)
-print(a2.output.value.shape)
+
+a2.backward()
+
+t = np.sum(a2.output.value , axis= 0 , keepdims = True)
+print(t.shape)
