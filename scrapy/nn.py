@@ -356,3 +356,8 @@ class Model:
         return model
 
 
+x = np.random.randn(10 , 28*28)
+l1 = Layer_Dense(28*28, 200)
+l1.forward(x)
+
+print(l1.biases.shape, l1.weights.shape, x.shape)

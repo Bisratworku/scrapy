@@ -26,8 +26,9 @@ class graph:
         other = other if isinstance(other, graph) else graph(other)
         out = graph(np.dot(self.value , other.value), [self, other], "*")
         def _backward():
-            self.grad = np.dot(out.grad, other.value.T)
-            other.grad = np.dot(self.value.T, out.grad) 
+            s = np.ones(out.value.shape) * out.grad
+            self.grad = np.dot(s, other.value.T)
+            other.grad = np.dot(self.value.T, s) 
         self._backward = _backward
         return out
     def __sub__(self,other):
@@ -102,4 +103,3 @@ class graph:
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
 
- 
