@@ -13,7 +13,7 @@ class graph:
         out = graph(self.value + other.value, [self, other], "+")
         def _backward():
             self.grad = out.grad
-            other.grad = out.grad
+            other.grad = np.sum(out.grad, axis = 0, keepdims = True)
         self._backward = _backward
         return out
     def __radd__(self, other):

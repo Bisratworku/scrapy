@@ -7,9 +7,12 @@ from autograd import graph
 
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
+
         self.weights = graph((0.1 * np.random.randn(n_inputs, n_neurons)))
         self.biases = graph(np.zeros((1, n_neurons)))
+    
     def forward(self, inputs):
+    
         self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
         mul = (self.inputs * self.weights) 
         self.output = mul + self.biases
@@ -345,5 +348,6 @@ a2.forward(l2.output)
 
 a2.backward()
 
-t = np.sum(a2.output.value , axis= 0 , keepdims = True)
-print(t.shape)
+grad = np.sum(list(l2.biases.grad), axis=0, keepdims=True)
+normal = l2.biases.value
+print(grad.shape, normal.shape)
