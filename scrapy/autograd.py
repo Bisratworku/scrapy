@@ -13,7 +13,7 @@ class graph:
         out = graph(self.value + other.value, [self, other], "+")
         def _backward():
             self.grad = out.grad
-            other.grad = np.sum(out.grad, axis = 0, keepdims = True)
+            other.grad = np.sum(out.grad, axis = 0, keepdims = True) # will convert (10, 2) shaped array to (1, 2) to align the shape of the grad with the orignal value one use case is when calculating the gradient of the bias parameters 
         self._backward = _backward
         return out
     def __radd__(self, other):
