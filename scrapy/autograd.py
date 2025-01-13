@@ -86,6 +86,9 @@ class graph:
             self.grad = (1/self.value) * out.grad
         self._backward = _backwrad
         return out
+    def softmax(self):
+        out = graph(np.exp(self.value)/np.sum(self.value, axis = 1), [self], "SOftmax")
+        return out
     def backward(self):
         visited = []
         topo = []
@@ -103,3 +106,9 @@ class graph:
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
 
+
+r = np.random.randn(3,3) #three images with three catagories
+e = np.exp(r) #exponsiates all the elements
+s = np.sum(e, axis = 1)
+
+d = e/s
