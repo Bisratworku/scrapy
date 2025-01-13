@@ -46,14 +46,13 @@ class Activation_Linear:
 x = np.random.randn(10, 27*27)
 l1 = Layer_Dense(27*27, 200)
 a1 = Activation_ReLU()
-l2 = Layer_Dense(200, 2)
-a2 = Activation_Sigmoid()
+l2 = Layer_Dense(200, 10)
+
 
 l1.forward(x)
 a1.forward(l1.output)
 l2.forward(a1.output)
-a2.forward(l2.output)
 
-a2.backward()
 
-print(l1.output.value.shape, l1.biases.value.shape, )
+softmax = l2.output.value
+print(softmax[0])
