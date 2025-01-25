@@ -9,7 +9,7 @@ class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
 
         self.weights = graph((0.1 * np.random.randn(n_inputs, n_neurons)))
-        self.biases = graph(np.zeros((1, n_neurons)))
+        self.biases = graph(np.random.randn(1, n_neurons))
     
     def forward(self, inputs):
     
