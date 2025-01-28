@@ -88,8 +88,12 @@ class graph:
         return out
     def softmax(self):
        exp = np.exp(self.value - np.max(self.value, axis= 1, keepdims = True))
-       out = graph(exp/np.sum(exp, axis=  1, keepdims = True))
+       out = graph(exp/np.sum(exp, axis=  1, keepdims = True),[self],"Softmax")
+       def _backward():
+           self.grad = 0 
+       self._backward = _backward  
        return out
+
     def backward(self):
         visited = []
         topo = []
@@ -106,3 +110,7 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
+e = graph(np.array([1,2,3,4]).reshape(1, -1)).softmax()
+
+zero = -e.value * e.value
+non = e.value * (1 - e.value)
