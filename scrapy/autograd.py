@@ -110,7 +110,24 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
-e = graph(np.array([1,2,3,4]).reshape(1, -1)).softmax()
+e = graph(np.array([1.0,2.0,3.0,4.0]).reshape(1, -1)).softmax()
+non_zero = e.value * (1 - e.value).reshape(1, -1)
+output = - np.dot(e.value.T, e.value)
+output[np.diag_indices(output.shape[0])] = non_zero
 
-zero = -e.value * e.value
-non = e.value * (1 - e.value)
+
+target = graph([1,2,3,4])
+
+m = np.sum((target - e)**2, axis= 1)   
+sample_losses = np.mean((target.value - e.value)**2, axis= 1)
+mse = m/len(target.value)
+mse.backward()
+
+m = (-2 * (target.value - e.value))/len(target.value)
+
+dvalues = np.dot(output, target.grad.T)
+
+print(sample_losses)
+print("______________________________________")
+print("fuck",mse)
+print(dvalues, e.value.shape)
