@@ -36,7 +36,7 @@ class graph:
         out = graph(self.value - other.value, [self, other], "-")        
         def _backward():
             self.grad = out.grad
-            out.grad = out.grad
+            other.grad = out.grad
         self._backward = _backward
         return out
     
@@ -51,7 +51,7 @@ class graph:
     def __truediv__(self, other): # dividing a graph by a constant value
         out = graph(self.value *(other**-1), [self], "div")
         def _backward():
-            self.grad = (other ** -1) * out.grad
+            self.grad = (other ** -1) *  out.grad
         self._backward = _backward
         return out
     def __pow__(self, other):
@@ -86,11 +86,22 @@ class graph:
             self.grad = (1/self.value) * out.grad
         self._backward = _backwrad
         return out
+    def sum(self, axis = None):
+        out = graph(np.sum(self.value, axis = axis),[self], "sum")
+        def _backward():
+            self.grad = np.ones_like(self.value) * out.grad  
+        self._backward = _backward
+        return out
     def softmax(self):
        exp = np.exp(self.value - np.max(self.value, axis= 1, keepdims = True))
        out = graph(exp/np.sum(exp, axis=  1, keepdims = True),[self],"Softmax")
        def _backward():
-           self.grad = 0 
+           self.grad = np.array([])
+           for i in self.value:
+                non_zero = i * (1 - i).reshape(1, -1)
+                jacobian = - np.dot(i.reshape(1, -1).T, i.reshape(1, -1))
+                jacobian[np.diag_indices(len(i))] = non_zero
+                self.grad = np.append(self.grad, np.dot(out.grad, jacobian))
        self._backward = _backward  
        return out
 
@@ -110,24 +121,3 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
-e = graph(np.array([1.0,2.0,3.0,4.0]).reshape(1, -1)).softmax()
-non_zero = e.value * (1 - e.value).reshape(1, -1)
-output = - np.dot(e.value.T, e.value)
-output[np.diag_indices(output.shape[0])] = non_zero
-
-
-target = graph([1,2,3,4])
-
-m = np.sum((target - e)**2, axis= 1)   
-sample_losses = np.mean((target.value - e.value)**2, axis= 1)
-mse = m/len(target.value)
-mse.backward()
-
-m = (-2 * (target.value - e.value))/len(target.value)
-
-dvalues = np.dot(output, target.grad.T)
-
-print(sample_losses)
-print("______________________________________")
-print("fuck",mse)
-print(dvalues, e.value.shape)
