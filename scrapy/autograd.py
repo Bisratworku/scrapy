@@ -132,7 +132,7 @@ sqr = sub**2
 sum = sqr.sum()
 div = sum / 4
 div.backward()
-print(layer_output.grad)
+#print(layer_output.grad)
 
 
 
