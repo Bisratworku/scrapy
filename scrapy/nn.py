@@ -34,7 +34,11 @@ class Activation_Sigmoid:
     def backward(self):
         return self.output.backward()
 class Activation_softmax:
-    pass        
+    def forward(self, inputs):
+        self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
+        self.output = self.inputs.softmax()
+    def backward(self):
+        return self.output.backward()        
 class Activation_Linear:
     def forward(self, inputs):
         self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
@@ -47,12 +51,11 @@ x = np.random.randn(10, 27*27)
 l1 = Layer_Dense(27*27, 200)
 a1 = Activation_ReLU()
 l2 = Layer_Dense(200, 10)
-
+a2 = Activation_softmax()
 
 l1.forward(x)
 a1.forward(l1.output)
 l2.forward(a1.output)
-
-
-softmax = l2.output.value
-print(softmax[0])
+a2.forward(l2.output)
+a2.backward()
+print(l1.weights.value.shape, l1.weights.grad.shape)
