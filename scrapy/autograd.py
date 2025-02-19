@@ -33,10 +33,10 @@ class graph:
         return out
     def __sub__(self,other):
         other = other if isinstance(other, graph) else graph(other)
-        out = graph(self.value - other.value, [self, other], "-")        
+        out = graph(self.value  +  (-other.value), [self, other], "-")        
         def _backward():
-            self.grad = out.grad
-            other.grad = out.grad
+            self.grad =  out.grad
+            other.grad = -out.grad 
         self._backward = _backward
         return out
     
@@ -88,7 +88,7 @@ class graph:
         return out
     def sum(self, axis = None):
         out = graph(np.sum(self.value, axis = axis),[self], "sum")
-        def _backward():
+        def _backward(): 
             self.grad = np.ones_like(self.value) * out.grad  
         self._backward = _backward
         return out
@@ -96,12 +96,15 @@ class graph:
        exp = np.exp(self.value - np.max(self.value, axis= 1, keepdims = True))
        out = graph(exp/np.sum(exp, axis=  1, keepdims = True),[self],"Softmax")
        def _backward():
-           self.grad = np.array([])
-           for i in self.value:
-                non_zero = i * (1 - i).reshape(1, -1)
+           self.grad = []
+           for idx,i in enumerate(out.value):
                 jacobian = - np.dot(i.reshape(1, -1).T, i.reshape(1, -1))
-                jacobian[np.diag_indices(len(i))] = non_zero
-                self.grad = np.append(self.grad, np.dot(out.grad, jacobian))
+                diagonal = i * (1 - i)
+                jacobian[np.diag_indices(jacobian.shape[0])] = diagonal
+                result = np.dot(out.grad[idx], jacobian)
+                self.grad.append(result)
+           self.grad = np.array(self.grad)
+             
        self._backward = _backward  
        return out
 
@@ -120,4 +123,17 @@ class graph:
             i._backward()
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
+
+layer_output = graph(np.array([[1,2,3,4],[1,2,3,4],[1,2,3,4]]))
+target = graph(np.array([[0.1,0.2,0.3,0.4], [0.1, 0.2,0.3,0.4], [0.1, 0.2,0.3,0.4]]))
+softmax = layer_output.softmax()
+sub = target - softmax
+sqr = sub**2
+sum = sqr.sum()
+div = sum / 4
+div.backward()
+print(layer_output.grad)
+
+
+
 
