@@ -124,15 +124,15 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
-layer_output = graph(np.array([[1,2,3,4],[1,2,3,4],[1,2,3,4]]))
-target = graph(np.array([[0.1,0.2,0.3,0.4], [0.1, 0.2,0.3,0.4], [0.1, 0.2,0.3,0.4]]))
+layer_output = graph(np.random.randn(729, 200))
+target = graph(np.random.randint(1, 4, size = (729,1)))
 softmax = layer_output.softmax()
 sub = target - softmax
 sqr = sub**2
 sum = sqr.sum()
 div = sum / 4
 div.backward()
-#print(layer_output.grad)
+#print(layer_output.grad.shape, layer_output.value.shape)
 
 
 
