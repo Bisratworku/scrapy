@@ -48,7 +48,7 @@ class Activation_Linear:
     def backward(self):
         return self.output.backward()
 class Loss_MSE:
-    def forward(self, inputs, target): #inputs represents the output of the previous layer and the target is the label of the dataset
+    def forward(self, inputs, target): #inputs represents the output of the previous layer (prediction) and the target is the label of the dataset
         self.inputs = inputs if isinstance(inputs, graph) else graph(inputs)
         self.target = target if isinstance(target, graph) else graph(target)
         sub = self.target - self.inputs
@@ -60,21 +60,31 @@ class Loss_MSE:
     def backward(self):
         return self.output.backward()
 class Loss_Catagorical:
-    pass
+    def forward(self, inputs, targets):
+        assert isinstance(inputs, graph) 
+        assert len(np.array(targets).shape) < 2 # no one hot encoding
+        clipped = inputs.clip(1e-7, 1 - 1e-7)
+        clip_index = clipped[range(len(targets)), targets]
+        self.output = -(clip_index.log().sum()/len(y))  
+        return self.output
+    def backward(self):
+        return self.output.backward()
 
 img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 
 x,y = img[:10], target[:10]
 
-l1 = Layer_Dense(28*28, 64)
+l1 = Layer_Dense(28*28, 123)
 a1 = Activation_ReLU()
-l2 = Layer_Dense(64, 10)
+l2 = Layer_Dense(123,10)
 a2 = Activation_softmax()
-
-l1.forward(x.reshape(-1,28*28))
+loss = Loss_Catagorical()
+l1.forward(x.reshape(-1, 28*28))
 a1.forward(l1.output)
 l2.forward(a1.output)
 a2.forward(l2.output)
+loss.forward(a2.output, y)
 
-pred = graph(a2.output.value[0][y])
-print(pred.nodes)
+loss.backward()
+print(l1.weights.grad[l1.weights.grad > 0].shape, l1.weights.value[l1.weights.value > 0].shape)
+
