@@ -100,7 +100,11 @@ class graph:
         return out
     def __getitem__(self, index):
         out = graph(self.value[index], [self], "get")
-        return out
+        def _backward():
+            self.grad = self.value
+            self.grad[index] = out.grad
+        self._backward = _backward
+        return out         
     def softmax(self):
        exp = np.exp(self.value - np.max(self.value, axis= 1, keepdims = True))
        out = graph(exp/np.sum(exp, axis=  1, keepdims = True),[self],"Softmax")
@@ -133,5 +137,3 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
-l = graph(np.random.randn(1,5)) 
-print(l,l[0,0])
