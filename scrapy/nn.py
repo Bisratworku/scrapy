@@ -1,8 +1,10 @@
 import numpy as np
 import pickle as pkl
 from autograd import graph
-
+import idx2numpy
 #=nb
+
+
 
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
@@ -57,27 +59,22 @@ class Loss_MSE:
         return self.output
     def backward(self):
         return self.output.backward()
+class Loss_Catagorical:
+    pass
 
+img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 
-x = np.random.randn(10, 27*27)
-l1 = Layer_Dense(27*27, 200)
+x,y = img[:10], target[:10]
+
+l1 = Layer_Dense(28*28, 64)
 a1 = Activation_ReLU()
-l2 = Layer_Dense(200, 10)
+l2 = Layer_Dense(64, 10)
 a2 = Activation_softmax()
-loss = Loss_MSE()
 
-
-l1.forward(x)
+l1.forward(x.reshape(-1,28*28))
 a1.forward(l1.output)
 l2.forward(a1.output)
 a2.forward(l2.output)
-target = graph(np.random.randint(1, 11, size = (10,1)))
-loss.forward(a2.output, target)
-loss.backward()
-print(l1.weights.grad[0][0], l1.weights.value[0][0])
-'''sub = target - a2.output
-sqr = sub**2
-sum = sqr.sum()
-div = sum / 4
-div.backward()
-print(l1.weights.grad.shape, l1.weights.value.shape)'''
+
+pred = graph(a2.output.value[0][y])
+print(pred.nodes)

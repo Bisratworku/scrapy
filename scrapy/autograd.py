@@ -92,6 +92,15 @@ class graph:
             self.grad = np.ones_like(self.value) * out.grad  
         self._backward = _backward
         return out
+    def clip(self, min, max):
+        out = graph(np.clip(self.value, min, max), [self], "clip")
+        def _backward():
+            self.grad = out.grad 
+        self._backward = _backward
+        return out
+    def __getitem__(self, index):
+        out = graph(self.value[index], [self], "get")
+        return out
     def softmax(self):
        exp = np.exp(self.value - np.max(self.value, axis= 1, keepdims = True))
        out = graph(exp/np.sum(exp, axis=  1, keepdims = True),[self],"Softmax")
@@ -124,16 +133,5 @@ class graph:
     def __repr__(self):
         return f'Data = {self.value}, Grad = {self.grad} ,exp = {self.exp}'
 
-layer_output = graph(np.random.randn(729, 200))
-target = graph(np.random.randint(1, 4, size = (729,1)))
-softmax = layer_output.softmax()
-sub = target - softmax
-sqr = sub**2
-sum = sqr.sum()
-div = sum / 4
-div.backward()
-#print(layer_output.grad.shape, layer_output.value.shape)
-
-
-
-
+l = graph(np.random.randn(1,5)) 
+print(l,l[0,0])
