@@ -79,12 +79,15 @@ a1 = Activation_ReLU()
 l2 = Layer_Dense(123,10)
 a2 = Activation_softmax()
 loss = Loss_Catagorical()
-l1.forward(x.reshape(-1, 28*28))
-a1.forward(l1.output)
-l2.forward(a1.output)
-a2.forward(l2.output)
-loss.forward(a2.output, y)
-
-loss.backward()
-print(l1.weights.grad[l1.weights.grad > 0].shape, l1.weights.value[l1.weights.value > 0].shape)
-
+for i in range(10):
+    l1.forward(x.reshape(-1, 28*28))
+    a1.forward(l1.output)
+    l2.forward(a1.output)
+    a2.forward(l2.output)
+    loss.forward(a2.output, y)
+    loss.backward()
+    l1.weights = l1.weights - l1.weights.grad * 2               
+    l1.biases = l1.biases - l1.biases.grad * 2
+    l2.weights = l2.weights - l2.weights.grad * 2
+    l2.biases = l2.biases - l2.biases.grad * 2
+    print(loss.output.value)
