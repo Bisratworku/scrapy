@@ -2,6 +2,9 @@ import numpy as np
 import pickle as pkl
 from autograd import graph
 import idx2numpy
+import nnfs
+from nnfs.datasets import spiral_data
+nnfs.init()
 #=nb
 
 
@@ -18,6 +21,7 @@ class Layer_Dense:
         mul = (self.inputs * self.weights) 
         self.output = mul + self.biases
         return self.output
+    
     def backward(self):
         return self.output.backward()
 class Activation_ReLU:
@@ -65,29 +69,38 @@ class Loss_Catagorical:
         assert len(np.array(targets).shape) < 2 # no one hot encoding
         clipped = inputs.clip(1e-7, 1 - 1e-7)
         clip_index = clipped[range(len(targets)), targets]
-        self.output = -(clip_index.log().sum()/len(y))  
+        self.output = -(clip_index.log().sum()/len(targets))  
         return self.output
     def backward(self):
         return self.output.backward()
+class Optimizer_Adam:
+    pass
 
-img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 
-x,y = img[:10], target[:10]
+#img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
+X, y = spiral_data(samples=100, classes=3)
 
-l1 = Layer_Dense(28*28, 123)
+l1 = Layer_Dense(2, 123)
 a1 = Activation_ReLU()
-l2 = Layer_Dense(123,10)
+l2 = Layer_Dense(123, 3)
 a2 = Activation_softmax()
 loss = Loss_Catagorical()
 for i in range(10):
-    l1.forward(x.reshape(-1, 28*28))
+    print(f'EPOCH ----------------------------- {i}')
+    l1.forward(X.reshape(-1, 2))
     a1.forward(l1.output)
     l2.forward(a1.output)
     a2.forward(l2.output)
     loss.forward(a2.output, y)
+    print(loss.output)
     loss.backward()
-    l1.weights = l1.weights - l1.weights.grad * 2               
-    l1.biases = l1.biases - l1.biases.grad * 2
-    l2.weights = l2.weights - l2.weights.grad * 2
-    l2.biases = l2.biases - l2.biases.grad * 2
-    print(loss.output.value)
+    l1.weights -= l1.weights.grad * 0.01
+    l1.biases -= l1.biases.grad * 0.01
+    l2.weights -= l1.weights.grad * 0.01
+    l2.biases -= l2.biases.grad * 0.01
+    
+
+
+
+
+
