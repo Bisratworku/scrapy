@@ -74,7 +74,8 @@ class Loss_Catagorical:
     def backward(self):
         return self.output.backward()
 class Optimizer_Adam:
-    pass
+    def __init__(self):
+        self.iterations = 0
 
 
 #img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
