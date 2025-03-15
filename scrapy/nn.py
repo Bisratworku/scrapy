@@ -2,6 +2,7 @@ import numpy as np
 import pickle as pkl
 from autograd import graph
 import idx2numpy
+import matplotlib.pyplot as plt
 import nnfs
 from nnfs.datasets import spiral_data
 nnfs.init()
@@ -86,8 +87,25 @@ class Optimizer_SGD:
     def step(self, layer):
         layer.weights -= layer.weights.grad * self.update()
         layer.biases -= layer.biases.grad * self.update()
-
+        
 #img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 X, y = spiral_data(samples=100, classes=3)
 
+l1 = Layer_Dense(2, 200)
+a1 = Activation_ReLU()
+l2 = Layer_Dense(200,3)
+a2 = Activation_softmax()
+loss = Loss_Catagorical()
+optim = Optimizer_SGD(0.1, 12)
 
+
+for i in range(100):
+    l1.forward(X.reshape(-1, 2))
+    a1.forward(l1.output)
+    l2.forward(a1.output)
+    a2.forward(l2.output)
+    loss.forward(a2.output,y)
+    print(loss.output)
+    loss.backward()
+    optim.step(l2)
+    optim.step(l1)
