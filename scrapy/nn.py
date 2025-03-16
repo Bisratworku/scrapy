@@ -93,6 +93,29 @@ class Optimizer_SGD:
         layer.momentum_biases = self.momentum * layer.momentum_biases + (1 - self.momentum) * layer.biases.grad
         layer.weights -= layer.momentum_weights * self.update()
         layer.biases -=  layer.momentum_biases * self.update() 
+class Optimizer_RMSprop:
+    def __init__(self, learning_rate, decay, momentum = 0.9, epsilon = 1e-8):
+        self.learning_rate = learning_rate
+        self.decay = decay
+        self.current_lr = 0
+        self.epoch = 0
+        self.momentum = momentum
+        self.epsilon = epsilon
+    def update(self):
+        self.epoch += 1 
+        self.current_lr = (1/(1+self.decay * self.epoch)) * self.learning_rate
+        return self.current_lr
+    def step(self, layer):
+        if not hasattr(layer, "momentum_weights"):
+            layer.momentum_weights = np.zeros_like(layer.weights.value)
+            layer.momentum_biases =  np.zeros_like(layer.biases.value)
+        layer.momentum_weights = self.momentum * layer.momentum_weights + (1 - self.momentum) * layer.weights.grad**2 
+        layer.momentum_biases = self.momentum * layer.momentum_biases + (1 - self.momentum) * layer.biases.grad**2
+        layer.weights -=  (layer.weights.grad / self.epsilon + np.sqrt(layer.momentum_weights)) * self.update()
+        layer.biases -=  (layer.biases.grad / self.epsilon + np.sqrt(layer.momentum_biases)) * self.update()
+
+
+
 #img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 
 X, y = spiral_data(samples=100, classes=3)
@@ -102,10 +125,10 @@ a1 = Activation_ReLU()
 l2 = Layer_Dense(200,3)
 a2 = Activation_softmax()
 loss = Loss_Catagorical()
-optim = Optimizer_SGD(0.1, 12)
+optim = Optimizer_RMSprop(0.001, 0.95)
 
 
-for i in range(10):
+for i in range(100):
     l1.forward(X.reshape(-1, 2))
     a1.forward(l1.output)
     l2.forward(a1.output)
@@ -116,3 +139,4 @@ for i in range(10):
     optim.step(l2)
     optim.step(l1)
     
+
