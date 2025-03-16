@@ -62,7 +62,7 @@ class graph:
         self._backward = _backward
         return out
     def __neg__(self):
-        out = graph(self.value * -1, [self], "-")
+        out = graph(self.value * -1, [self], "neg")
         def _backward():
             self.grad = -1 * out.grad
         self._backward = _backward
