@@ -75,7 +75,7 @@ class Loss_Catagorical:
     def backward(self):
         return self.output.backward()
 class Optimizer_SGD:
-    def __init__(self,learning_rate, decay, momentum = 0.9):#in this case momentem is bata an beta is usually 0.9 beta is used to control the influence of the previous gradient on the current one
+    def __init__(self,learning_rate = 1., decay = 0.0, momentum = 0.9):#in this case momentem is bata an beta is usually 0.9 beta is used to control the influence of the previous gradient on the current one
         self.learning_rate = learning_rate
         self.decay = decay
         self.epoch = 0
@@ -133,36 +133,46 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
             layer.squared_weights = np.zeros_like(layer.weights.value) # bothe are for RMS part
             layer.squared_biases = np.zeros_like(layer.biases.value)   
         layer.momentum_weights = self.beta_1 * layer.momentum_weights + (1 - self.beta_1) * layer.weights.grad
-        corrected_momentum_weights = layer.momentum_weights / (1 + self.beta_1**(layer.iter)) # bias correction 
+        corrected_momentum_weights = layer.momentum_weights / (1 + (self.beta_1**(layer.iter))) # bias correction 
         layer.momentum_biases = self.beta_1 * layer.momentum_biases + (1 - self.beta_1) * layer.biases.grad
-        corrected_momentum_biases = layer.momentum_biases / (1 + self.beta_1**(layer.iter)) # bias correction 
+        corrected_momentum_biases = layer.momentum_biases / (1 + (self.beta_1**(layer.iter))) # bias correction 
         layer.squared_weights = self.beta_2 * layer.squared_weights + (1 - self.beta_2) * layer.weights.grad**2
-        corrected_squared_weights = layer.squared_weights / (1 + self.beta_2**(layer.iter))
+        corrected_squared_weights = layer.squared_weights / (1 + (self.beta_2**(layer.iter)))
         layer.squared_biases = self.beta_2 * layer.squared_biases + (1 - self.beta_2) * layer.biases.grad**2
-        corrected_squared_biases =  layer.squared_biases / (1 + self.beta_2**(layer.iter))
+        corrected_squared_biases =  layer.squared_biases / (1 + (self.beta_2**(layer.iter)))
         layer.iter += 1
-        layer.weights -= self.update() * (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights)))  
-        layer.biases -= self.update() * (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) 
-        
-
+        layer.weights -= (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights))) * self.update()  
+        layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
+class model:
+    def __init__(self, layer:list):
+        self.layers = layer
+        self.tunable_layer = []
+    def forward(self, X):
+        self.input = X
+        for i in self.layers:
+            if isinstance(i, Layer_Dense):
+                self.tunable_layer.append(i)
+            i.forward(self.input)
+            self.input = i.output
+        self.output = self.layers[-1].output
+        return self.output
 
 #img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
 
 X, y = spiral_data(samples=100, classes=3)
 
-l1 = Layer_Dense(2, 200)
-a1 = Activation_ReLU()
-l2 = Layer_Dense(200,3)
-a2 = Activation_softmax()
+r = model([
+    Layer_Dense(2, 200),
+    Activation_ReLU(),
+    Layer_Dense(200,3),     
+    Activation_softmax()     
+])
 loss = Loss_Catagorical()
-optim = Optimizer_ADAM()
-
+optim = Optimizer_SGD(0.01, 0.2)
 for i in range(10):
-    l1.forward(X.reshape(-1,2))
-    a1.forward(l1.output)
-    l2.forward(a1.output)
-    a2.forward(l2.output)
-    loss.forward(a2.output,y)
-    print(loss.output.value)
-    optim.step(l2)
-    optim.step(l1)
+    r.forward(X)
+    loss.forward(r.output, y)
+    print(loss.output)
+    loss.backward()
+    for i in reversed(r.tunable_layer):
+        optim.step(i)
