@@ -1,15 +1,7 @@
 import numpy as np
-import pickle as pkl
-from autograd import graph
-import idx2numpy
-import matplotlib.pyplot as plt
-import nnfs
-from nnfs.datasets import spiral_data
-nnfs.init()
+from scrapy.autograd import graph
+
 #=nb
-
-
-
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
 
@@ -157,22 +149,3 @@ class model:
         self.output = self.layers[-1].output
         return self.output
 
-#img,target = idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-images.idx3-ubyte"), idx2numpy.convert_from_file("C:\\Users\\pro\\Documents\\GitHub\\scrapy\\dataset\\train-labels.idx1-ubyte")
-
-X, y = spiral_data(samples=100, classes=3)
-
-r = model([
-    Layer_Dense(2, 200),
-    Activation_ReLU(),
-    Layer_Dense(200,3),     
-    Activation_softmax()     
-])
-loss = Loss_Catagorical()
-optim = Optimizer_SGD(0.01, 0.2)
-for i in range(10):
-    r.forward(X)
-    loss.forward(r.output, y)
-    print(loss.output)
-    loss.backward()
-    for i in reversed(r.tunable_layer):
-        optim.step(i)
