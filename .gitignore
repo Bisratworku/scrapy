@@ -2,3 +2,4 @@
 .pkl
 .pyc
 __pycache__/
+.idx3-ubyte
