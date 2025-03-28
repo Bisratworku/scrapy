@@ -135,17 +135,5 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
         layer.iter += 1
         layer.weights -= (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights))) * self.update()  
         layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
-class model:
-    def __init__(self, layer:list):
-        self.layers = layer
-        self.tunable_layer = []
-    def forward(self, X):
-        self.input = X
-        for i in self.layers:
-            if isinstance(i, Layer_Dense):
-                self.tunable_layer.append(i)
-            i.forward(self.input)
-            self.input = i.output
-        self.output = self.layers[-1].output
-        return self.output
+
 
