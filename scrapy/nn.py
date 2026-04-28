@@ -1,5 +1,6 @@
 import numpy as np
-from scrapy.autograd import graph
+from autograd import graph
+import idx2numpy
 #=nb
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
@@ -135,3 +136,66 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
         layer.weights -= (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights))) * self.update()  
         layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
 
+class model:
+    def __init__(self, layers , loss, optimaizer):
+        self.layers = layers
+        self.loss = loss
+        self.optimaizer = optimaizer
+    def train(self, train_data, train_label):
+        tunnable = []
+        self.data = train_data
+        for i in self.layers:
+            i.forward(self.data)
+            if isinstance(i, Layer_Dense):
+                tunnable.append(i)
+            self.data = i.output
+        self.loss.forward(self.data, train_label)
+        self.loss.backward()
+        for j in reversed(tunnable):
+            self.optimaizer.step(j)
+    def test(self, test_data, test_label):
+        self.test_data = test_data
+        for i in self.layers:
+            i.forward(self.test_data)
+            self.test_data = i.output
+        
+train_img = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/train-images.idx3-ubyte')/255
+train_lbl = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/train-labels.idx1-ubyte')
+test_img = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/t10k-images.idx3-ubyte')/255
+test_lbl = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/t10k-labels.idx1-ubyte')
+batch = 32
+train_data =  list(zip(np.array_split(train_img.reshape(-1,28*28),batch), np.array_split(train_lbl, batch)))
+test_data = list(zip(np.array_split(test_img.reshape(-1,28*28), batch), np.array_split(test_lbl, batch)))
+
+
+'''
+for i in range(5):
+    print(f'The ------------ {i} ---------------- iteration')
+    for batch, (x,y) in enumerate(train_data):
+        print(f'_________________________ {batch + 1} ___________________________')
+        l1.forward(x)
+        a1.forward(l1.output)
+        l2.forward(a1.output)
+        a2.forward(l2.output)
+        l3.forward(a2.output)
+        a3.forward(l3.output)
+        loss.forward(a3.output,y)
+        print(loss.output.value)
+        loss.backward()
+        optimizer.step(l3)
+        optimizer.step(l2)
+        optimizer.step(l1)
+'''
+
+x,y = train_data[0]
+m = model([Layer_Dense(28*28, 200),
+           Activation_ReLU(),
+           Layer_Dense(200, 100),
+           Activation_ReLU(),
+           Layer_Dense(100, 10),
+           Activation_softmax()], Loss_Catagorical(), Optimizer_ADAM(learning_rate=0.001, decay=1e-3))
+for i in range(5):
+    print(f'The ------------ {i} ---------------- iteration')
+    for batch, (x,y) in enumerate(train_data):
+        print(f'_________________________ {batch + 1} ___________________________')
+        m.train(x,y)
