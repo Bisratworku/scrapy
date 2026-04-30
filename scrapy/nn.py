@@ -137,28 +137,44 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
         layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
 
 class model:
-    def __init__(self, layers , loss, optimaizer):
+    def __init__(self, layers, loss, optimizer):
         self.layers = layers
         self.loss = loss
-        self.optimaizer = optimaizer
-    def train(self, train_data, train_label):
-        tunnable = []
-        self.data = train_data
-        for i in self.layers:
-            i.forward(self.data)
-            if isinstance(i, Layer_Dense):
-                tunnable.append(i)
-            self.data = i.output
-        self.loss.forward(self.data, train_label)
-        self.loss.backward()
-        for j in reversed(tunnable):
-            self.optimaizer.step(j)
-    def test(self, test_data, test_label):
-        self.test_data = test_data
-        for i in self.layers:
-            i.forward(self.test_data)
-            self.test_data = i.output
-        
+        self.optimizer = optimizer
+    def train(self, train_value, train_lbl, batch):
+        train_data =  list(zip(np.array_split(train_value.reshape(-1,28*28),batch), np.array_split(train_lbl, batch)))
+        self.output = []
+        for bat, (x,y) in enumerate(train_data):
+            self.tunnable = []
+            outputs = x
+            for  i in self.layers:
+                i.forward(outputs)
+                if isinstance(i, Layer_Dense):
+                    self.tunnable.append(i)
+                outputs = i.output
+            self.loss.forward(outputs, y)
+            print(self.loss.output)
+            self.loss.backward()
+            for j in reversed(self.tunnable):
+                self.optimizer.step(j)
+            self.output = outputs
+    def test(self, test_value, test_lbl, batch):
+        test_data = list(zip(np.array_split(test_value.reshape(-1,28*28), batch), np.array_split(test_lbl, batch))) 
+        self.test_outputs = []
+        total_loss,correct = 0,0
+        for bat, (x,y) in enumerate(test_data):
+            test_outputs = x
+            for i in self.layers:
+                i.forward(test_outputs)
+                test_outputs = i.output
+            self.loss.forward(test_outputs, y)
+            total_loss += self.loss.output.value
+            correct += (np.argmax(self.layers[len(self.layers) - 1].output.value ,axis = 1) == y).sum()
+            self.test_outputs = test_outputs
+        total_loss /= len(test_data)
+        correct /= len(test_value)
+        print(f'Test Loss : {total_loss} , Accuracy : {correct}')
+
 train_img = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/train-images.idx3-ubyte')/255
 train_lbl = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/train-labels.idx1-ubyte')
 test_img = idx2numpy.convert_from_file('C:/Users/Bisrat/Documents/GitHub/scrapy/t10k-images.idx3-ubyte')/255
@@ -194,8 +210,7 @@ m = model([Layer_Dense(28*28, 200),
            Activation_ReLU(),
            Layer_Dense(100, 10),
            Activation_softmax()], Loss_Catagorical(), Optimizer_ADAM(learning_rate=0.001, decay=1e-3))
-for i in range(5):
-    print(f'The ------------ {i} ---------------- iteration')
-    for batch, (x,y) in enumerate(train_data):
-        print(f'_________________________ {batch + 1} ___________________________')
-        m.train(x,y)
+for  i in range(5):
+    print(f'---------------------------EPOCH : {i + 1}')
+    m.train(train_img, train_lbl, 32)
+    m.test(test_img, test_lbl, 32)
