@@ -1,5 +1,5 @@
 import numpy as np
-from .autograd import graph
+from autograd import graph
 #=nb
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
@@ -185,10 +185,3 @@ class model:
             self.pred_output = i.output
         self.pred_output = np.argmax(self.pred_output.value, axis = 1)[0]
         return self.pred_output
-    def save(self):
-        for idx,i in enumerate(self.layers):
-            print(f'_________________________ {idx} _________________________')
-            if isinstance(i, Layer_Dense):
-                print(i.weights, i.biases)
-
-
