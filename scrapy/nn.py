@@ -1,6 +1,6 @@
 import numpy as np
 from autograd import graph
-#=nb
+import json
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
 
@@ -143,7 +143,7 @@ class model:
     def train(self, train_value, train_lbl, batch):
         train_data =  list(zip(np.array_split(train_value.reshape(-1,28*28),batch), np.array_split(train_lbl, batch)))
         self.output = []
-        for bat, (x,y) in enumerate(train_data):
+        for (x,y) in train_data:
             self.tunnable = []
             outputs = x
             for  i in self.layers:
@@ -162,7 +162,7 @@ class model:
         self.test_loss = None
         self.test_outputs = []
         total_loss,correct = 0,0
-        for bat, (x,y) in enumerate(test_data):
+        for (x,y) in test_data:
             test_outputs = x
             for i in self.layers:
                 i.forward(test_outputs)
@@ -185,3 +185,23 @@ class model:
             self.pred_output = i.output
         self.pred_output = np.argmax(self.pred_output.value, axis = 1)[0]
         return self.pred_output
+    def save(self):
+        obj = []
+        for i in self.layers:
+            if isinstance(i, Layer_Dense):
+                u = {'weights' : i.weights.value.tolist(), 'biases' : i.biases.value.tolist()}
+                obj.append(u)
+            else:
+                obj.append({'Activation' : i.__class__.__name__})
+        with open('data.json', 'w')as f:
+            json.dump(obj , f)
+m = model([
+    Layer_Dense(28*28, 200),
+    Activation_ReLU(),
+    Layer_Dense(200, 100),
+    Activation_ReLU(),
+    Layer_Dense(100, 10),
+    Activation_softmax()
+], Loss_Catagorical(), Optimizer_ADAM(learning_rate=0.001, decay=1e-3))
+
+m.save()
