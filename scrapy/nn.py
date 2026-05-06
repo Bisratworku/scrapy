@@ -1,6 +1,7 @@
 import numpy as np
 from autograd import graph
 import json
+import pickle
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
 
@@ -189,12 +190,13 @@ class model:
         obj = []
         for i in self.layers:
             if isinstance(i, Layer_Dense):
-                u = {'weights' : i.weights.value.tolist(), 'biases' : i.biases.value.tolist()}
-                obj.append(u)
+                obj.append({'weights' : i.weights.value.tolist(),
+                            'biases' : i.biases.value.tolist()})
             else:
-                obj.append({'Activation' : i.__class__.__name__})
-        with open('data.json', 'w')as f:
-            json.dump(obj , f)
+                obj.append({'activation' : i.__class__.__name__})
+        obj = {1 : obj}
+        with open('data.pth', 'wb') as f:
+            pickle.dump(obj, f, )
 m = model([
     Layer_Dense(28*28, 200),
     Activation_ReLU(),
