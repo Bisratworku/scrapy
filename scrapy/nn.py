@@ -186,17 +186,34 @@ class model:
             self.pred_output = i.output
         self.pred_output = np.argmax(self.pred_output.value, axis = 1)[0]
         return self.pred_output
-    def save(self):
+    def save(self, path):
         obj = []
         for i in self.layers:
             if isinstance(i, Layer_Dense):
                 obj.append({'weights' : i.weights.value.tolist(),
                             'biases' : i.biases.value.tolist()})
             else:
-                obj.append({'activation' : i.__class__.__name__})
+                obj.append({'activation' : i})
         obj = {1 : obj}
-        with open('data.pth', 'wb') as f:
-            pickle.dump(obj, f, )
+        with open(f'{path}.pth', 'wb') as f:
+            pickle.dump(obj, f)
+    def load(self, path):
+        self.data = None
+        layers = [] 
+        with open(path, 'rb') as f:
+            self.data =  pickle.load(f)
+        for idx,i in enumerate(self.data[1]):
+            if idx % 2 == 0:
+                weights = np.array(i['weights'])
+                biases = np.array(i['biases'])
+                t =  Layer_Dense(weights.shape[0], weights.shape[1])
+                t.weights = graph(weights)
+                t.biases = graph(biases)
+                layers.append(t)
+            else:
+                layers.append(i['activation'])
+        self.layers = layers
+        print("__________________________________Model Loading Complete________________________________")
 m = model([
     Layer_Dense(28*28, 200),
     Activation_ReLU(),
@@ -205,5 +222,4 @@ m = model([
     Layer_Dense(100, 10),
     Activation_softmax()
 ], Loss_Catagorical(), Optimizer_ADAM(learning_rate=0.001, decay=1e-3))
-
-m.save()
+m.load('d.pth')
