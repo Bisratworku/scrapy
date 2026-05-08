@@ -1,5 +1,6 @@
 import numpy as np
-from .autograd import graph
+from scrapy.autograd import graph
+#=nb
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
 
@@ -133,3 +134,4 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
         layer.iter += 1
         layer.weights -= (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights))) * self.update()  
         layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
+
