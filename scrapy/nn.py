@@ -1,5 +1,6 @@
 import numpy as np
-from scrapy.autograd import graph
+from .autograd import graph
+import pickle
 #=nb
 class Layer_Dense:
     def __init__(self, n_inputs : int, n_neurons : int):
@@ -135,3 +136,34 @@ class Optimizer_ADAM: # in adam optimization we are combining momenentum with RM
         layer.weights -= (corrected_momentum_weights / (self.epsilon + np.sqrt(corrected_squared_weights))) * self.update()  
         layer.biases -=  (corrected_momentum_biases / (self.epsilon + np.sqrt(corrected_squared_biases))) * self.update() 
 
+def save(layers, path):
+    layer = []
+    for i in layers:
+        if isinstance(i, Layer_Dense):
+            layer.append({'weights' : i.weights.value, 'biases' : i.biases.value}) 
+        else:
+            layer.append({'Activation' : i.__class__.__name__})
+    with open(f'{path}.pkl', 'wb') as f:
+        pickle.dump(layer, f)
+
+def load(path):
+    layers = []
+    activation = {
+        'Activation_ReLU' : Activation_ReLU(),
+        'Activation_softmax' : Activation_softmax(),
+        'Activation_Linear' : Activation_Linear(),
+        'Activation_Sigmoid' : Activation_Sigmoid()
+    }
+    with open(path, 'rb') as f:
+        data = pickle.load(f)
+        for i in data:
+            if list(i.keys()) == ['Activation']:
+                activate = activation[i['Activation']]
+                layers.append(activate)
+            else:
+                paramerter = i['weights'].shape
+                layer = Layer_Dense(paramerter[0], paramerter[1])
+                layer.weights = graph(i['weights'])
+                layer.biases = graph(i['biases'])
+                layers.append(layer)
+    return layers
